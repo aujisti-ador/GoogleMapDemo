@@ -2,9 +2,10 @@
 // https://aboutreact.com/react-native-map-example/
 
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import RNLocation from 'react-native-location';
+import SearchableDropDown from 'react-native-searchable-dropdown';
 
 const App = () => {
 
@@ -14,31 +15,41 @@ const App = () => {
       longitude: 0
     })
 
-  let _startUpdatingLocation = () => {
-    console.log('in start updating location')
-    // RNLocation.subscribeToLocationUpdates(
-    //   locations => {
-    //     // this.setState({ location: locations[0] });
-    //     console.log('here')
-    //     console.log(locations)
+  const [region, setRegion] = useState(
+    {
+      latitude: 23.777176,
+      longitude: 90.399452
+    })
 
-    //     setMarker({
-    //       latitude: locations[0].latitude,
-    //       longitude: locations[0].longitude
-    //     })
-    //   }
-    // )
+  const [locationList, setLocationList] = useState([
+    {
+      name: 'Gononet Online Solution Limited',
+      latitude: 23.7549197209571,
+      longitude: 90.39199367826377
+    },
+    {
+      name: 'Tokya Square',
+      latitude: 23.765193055086584,
+      longitude: 90.35896178147031
+    },
+    {
+      name: 'Liberation War Museum',
+      latitude: 23.776150402778374,
+      longitude: 90.37061632815984
+    },
+    {
+      name: 'Divine Eco Resort',
+      latitude: 21.41741350892996,
+      longitude: 91.98192614329092
+    }
+  ])
 
-    // RNLocation.getLatestLocation({ timeout: 60000 })
-    //   .then(latestLocation => {
-    //     // Use the location here
-    //     console.log(latestLocation)
+  const [searchInput, setSearchInput] = useState('')
 
-    //     setMarker({
-    //       latitude: locations[0].latitude,
-    //       longitude: locations[0].longitude
-    //     })
-    //   })
+
+  const handleSearchLocation = (text) => {
+    setSearchInput(text)
+
   }
 
   useEffect(() => {
@@ -54,6 +65,8 @@ const App = () => {
 
     // })
 
+    console.log(searchInput)
+
     RNLocation.configure({
       distanceFilter: 100, // Meters
       desiredAccuracy: {
@@ -67,27 +80,6 @@ const App = () => {
       maxWaitTime: 5000, // Milliseconds
     })
 
-    // RNLocation.checkPermission({
-    //   ios: 'whenInUse', // or 'always'
-    //   android: {
-    //     detail: 'coarse' // or 'fine'
-    //   }
-    // }).then((res) => {
-    //   console.log(res)
-    // })
-
-    // RNLocation.getLatestLocation({ timeout: 60000 })
-    //   .then(latestLocation => {
-    //     // Use the location here
-    //     console.log(latestLocation)
-
-    //     setMarker({
-    //       latitude: locations[0].latitude,
-    //       longitude: locations[0].longitude
-    //     })
-    //   })
-
-
     RNLocation.requestPermission({
       ios: "whenInUse",
       android: {
@@ -100,31 +92,31 @@ const App = () => {
         }
       }
     }).then(granted => {
-      if (granted) {
-        // console.log(granted)
+      // if (granted) {
+      //   // console.log(granted)
 
-        // _startUpdatingLocation()
+      //   // _startUpdatingLocation()
 
-        RNLocation.getLatestLocation({ timeout: 60000 })
-          .then(latestLocation => {
-            // Use the location here
-            console.log(latestLocation)
+      //   RNLocation.getLatestLocation({ timeout: 60000 })
+      //     .then(latestLocation => {
+      //       // Use the location here
+      //       console.log(latestLocation)
 
-            setMarker({
-              latitude: 37.42342342342342,
-              longitude: -122.08395287867832
-            })
-          })
+      //       setMarker({
+      //         latitude: 37.42342342342342,
+      //         longitude: -122.08395287867832
+      //       })
+      //     })
 
-        console.log('----', marker)
-      }
+      //   console.log('----', marker)
+      // }
     })
   })
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        <MapView
+        {/* <MapView
           style={styles.mapStyle}
           // region={{
           //   latitude: marker.latitude,
@@ -152,7 +144,85 @@ const App = () => {
                Longitude: ${marker.longitude}`
             }
           />
+        </MapView> */}
+
+
+        <MapView
+          style={styles.mapStyle}
+          region={marker.latitude > 0 ?
+            {
+              latitude: marker.latitude,
+              longitude: marker.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            } : {
+              latitude: region.latitude,
+              longitude: region.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }
+          }
+          showsUserLocation={true}
+          followsUserLocation={true}
+          loadingEnabled={true}
+          onMapReady={() => {
+          }}
+        >
+
+          <Marker
+            coordinate={marker}
+            title={'LatLong'}
+            description={
+              `Latitude: ${marker.latitude}
+               Longitude: ${marker.longitude}`
+            }
+          />
+
         </MapView>
+
+        <View style={{ position: 'absolute', top: 50, width: '100%' }}>
+          <SearchableDropDown
+            onItemSelect={(item) => {
+              console.log(item)
+              setMarker({
+                latitude: item.latitude,
+                longitude: item.longitude
+              })
+            }}
+            containerStyle={{ padding: 5 }}
+            itemStyle={{
+              padding: 10,
+              marginTop: 2,
+              backgroundColor: '#ddd',
+              borderColor: '#bbb',
+              borderWidth: 1,
+              borderRadius: 5,
+            }}
+            itemTextStyle={{ color: '#222' }}
+            itemsContainerStyle={{ maxHeight: 140 }}
+
+            items={locationList}
+            textInputProps={
+              {
+                placeholder: "Search Location",
+                // underlineColorAndroid: "transparent",
+                style: {
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 5,
+                  backgroundColor: '#fff',
+                },
+                onTextChange: text => console.log(text)
+              }
+            }
+            listProps={
+              {
+                nestedScrollEnabled: true,
+              }
+            }
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
