@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "geolib": "^3.3.3",
     "react": "17.0.2",
     "react-native": "0.67.2",
     "react-native-location": "^2.5.0",

@@ -2,12 +2,32 @@
 // https://aboutreact.com/react-native-map-example/
 
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { SafeAreaView, StyleSheet, Text, TextInput, View, ToastAndroid } from 'react-native';
+import MapView, { Circle, Marker } from 'react-native-maps';
 import RNLocation from 'react-native-location';
 import SearchableDropDown from 'react-native-searchable-dropdown';
+import { getDistance } from 'geolib';
 
 const App = () => {
+
+  const [radiusSize] = useState(2000)
+
+  const [wearhouse, setWearhouse] = useState({
+    name: 'Firmgate Wear House',
+    latitude: 23.7625,
+    longitude: 90.3785
+  })
+
+  const [inside, setInside] = useState({
+    latitude: 23.776150402778374,
+    longitude: 90.37061632815984
+  })
+
+  const [outside, setOutside] = useState({
+    latitude: 23.7991,
+    longitude: 90.3879
+  })
+
 
   const [marker, setMarker] = useState(
     {
@@ -38,34 +58,28 @@ const App = () => {
       longitude: 90.37061632815984
     },
     {
-      name: 'Divine Eco Resort',
-      latitude: 21.41741350892996,
-      longitude: 91.98192614329092
+      name: 'Mirpur Dental',
+      latitude: 23.7991,
+      longitude: 90.3879
+    },
+    {
+      name: 'Lalbag Fort',
+      latitude: 23.7189,
+      longitude: 90.3882
     }
   ])
 
-  const [searchInput, setSearchInput] = useState('')
-
-
-  const handleSearchLocation = (text) => {
-    setSearchInput(text)
-
+  const handleDistance = (latlong) => {
+    console.log(latlong.nativeEvent)
+    const distance = getDistance(wearhouse, latlong.nativeEvent.coordinate)
+    if (distance >= radiusSize) {
+      ToastAndroid.show("Sorry, Outside Coverage", ToastAndroid.SHORT);
+    } else {
+      ToastAndroid.show("We are delivering", ToastAndroid.SHORT);
+    }
   }
 
   useEffect(() => {
-    // Geolocation.getCurrentPosition(position => {
-    //   const initialPosition = JSON.stringify(position)
-    //   // console.warn(initialPosition)
-    //   // console.warn(position.coords.latitude)
-    //   // console.warn(position.coords.longitude)
-    //   setMarker({
-    //     latitude: position.coords.latitude,
-    //     longitude: position.coords.longitude
-    //   })
-
-    // })
-
-    console.log(searchInput)
 
     RNLocation.configure({
       distanceFilter: 100, // Meters
@@ -149,20 +163,29 @@ const App = () => {
 
         <MapView
           style={styles.mapStyle}
-          region={marker.latitude > 0 ?
+          provider='google'
+          // region={marker.latitude > 0 ?
+          //   {
+          //     latitude: marker.latitude,
+          //     longitude: marker.longitude,
+          //     latitudeDelta: 0.0922,
+          //     longitudeDelta: 0.0421,
+          //   } : {
+          //     latitude: wearhouse.latitude,
+          //     longitude: wearhouse.longitude,
+          //     latitudeDelta: 0.0922,
+          //     longitudeDelta: 0.0421,
+          //   }
+          // }
+          // showsUserLocation={true}
+          region={
             {
-              latitude: marker.latitude,
-              longitude: marker.longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            } : {
-              latitude: region.latitude,
-              longitude: region.longitude,
+              latitude: wearhouse.latitude,
+              longitude: wearhouse.longitude,
               latitudeDelta: 0.0922,
               longitudeDelta: 0.0421,
             }
           }
-          showsUserLocation={true}
           followsUserLocation={true}
           loadingEnabled={true}
           onMapReady={() => {
@@ -170,14 +193,28 @@ const App = () => {
         >
 
           <Marker
-            coordinate={marker}
-            title={'LatLong'}
-            description={
-              `Latitude: ${marker.latitude}
-               Longitude: ${marker.longitude}`
-            }
+            coordinate={wearhouse}
+            title={wearhouse.name}
+            image={require('./wearhouseMarker.png')}
+            description={wearhouse.name}
           />
 
+          {locationList.map(location => (
+            <Marker
+              coordinate={location}
+              title={location.name}
+              image={require('./pointLocation.png')}
+              description={location.name}
+              onPress={handleDistance}
+            />
+          ))}
+          <Circle
+            center={wearhouse}
+            radius={radiusSize}
+            strokeColor='#2F86DE'
+            strokeWidth={2}
+            fillColor='rgba(73, 131, 232, 0.3)'
+          />
         </MapView>
 
         <View style={{ position: 'absolute', top: 50, width: '100%' }}>
