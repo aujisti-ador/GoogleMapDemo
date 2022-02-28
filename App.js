@@ -2,11 +2,15 @@
 // https://aboutreact.com/react-native-map-example/
 
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TextInput, View, ToastAndroid } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, TextInput, View, ToastAndroid, Image, TouchableOpacity } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import RNLocation from 'react-native-location';
 import SearchableDropDown from 'react-native-searchable-dropdown';
 import { getDistance } from 'geolib';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+navigator.geolocation = require('react-native-geolocation-service');
+import Geolocation from 'react-native-geolocation-service';
+
 
 const App = () => {
 
@@ -69,14 +73,29 @@ const App = () => {
     }
   ])
 
-  const handleDistance = (latlong) => {
-    console.log(latlong.nativeEvent)
-    const distance = getDistance(wearhouse, latlong.nativeEvent.coordinate)
-    if (distance >= radiusSize) {
-      ToastAndroid.show("Sorry, Outside Coverage", ToastAndroid.SHORT);
-    } else {
-      ToastAndroid.show("We are delivering", ToastAndroid.SHORT);
-    }
+  // const handleDistance = (latlong) => {
+  //   console.log(latlong.nativeEvent)
+  //   const distance = getDistance(wearhouse, latlong.nativeEvent.coordinate)
+  //   if (distance >= radiusSize) {
+  //     ToastAndroid.show("Sorry, Outside Coverage", ToastAndroid.SHORT);
+  //   } else {
+  //     ToastAndroid.show("We are delivering", ToastAndroid.SHORT);
+  //   }
+  // }
+
+  const handleCurrentLocation = () => {
+    console.log('here in HandleCurrentLocation')
+    Geolocation.getCurrentPosition(
+      (position) => {
+        console.log('===>>', position.coords);
+        setMarker(position.coords)
+      },
+      (error) => {
+        // See error code charts below.
+        console.log(error.code, error.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    )
   }
 
   useEffect(() => {
@@ -106,247 +125,86 @@ const App = () => {
         }
       }
     }).then(granted => {
-      // if (granted) {
-      //   // console.log(granted)
-
-      //   // _startUpdatingLocation()
-
-      //   RNLocation.getLatestLocation({ timeout: 60000 })
-      //     .then(latestLocation => {
-      //       // Use the location here
-      //       console.log(latestLocation)
-
-      //       setMarker({
-      //         latitude: 37.42342342342342,
-      //         longitude: -122.08395287867832
-      //       })
-      //     })
-
-      //   console.log('----', marker)
-      // }
+      if (granted)
+        handleCurrentLocation()
     })
-  })
+  }, [])
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        {/* <MapView
-          style={styles.mapStyle}
-          // region={{
-          //   latitude: marker.latitude,
-          //   longitude: marker.longitude,
-          //   latitudeDelta: 0.0922,
-          //   longitudeDelta: 0.0421,
-          // }}
-
-          showsUserLocation={true}
-          followsUserLocation={true}
-          loadingEnabled={true}
-          onMapReady={() => {
-
-          }}
-        >
-          <Marker
-            draggable
-            coordinate={marker}
-            onDragEnd={
-              (e) => alert(JSON.stringify(e.nativeEvent.coordinate))
-            }
-            title={'LatLong'}
-            description={
-              `Latitude: ${marker.latitude}
-               Longitude: ${marker.longitude}`
-            }
-          />
-        </MapView> */}
-
-
         <MapView
           style={styles.mapStyle}
           provider='google'
-          // region={marker.latitude > 0 ?
-          //   {
-          //     latitude: marker.latitude,
-          //     longitude: marker.longitude,
-          //     latitudeDelta: 0.0922,
-          //     longitudeDelta: 0.0421,
-          //   } : {
-          //     latitude: wearhouse.latitude,
-          //     longitude: wearhouse.longitude,
-          //     latitudeDelta: 0.0922,
-          //     longitudeDelta: 0.0421,
-          //   }
-          // }
-          // showsUserLocation={true}
           region={
             {
-              latitude: wearhouse.latitude,
-              longitude: wearhouse.longitude,
+              latitude: marker.latitude,
+              longitude: marker.longitude,
               latitudeDelta: 0.0922,
               longitudeDelta: 0.0421,
             }
           }
-          followsUserLocation={true}
+          // followsUserLocation={true}
           loadingEnabled={true}
           onMapReady={() => {
+            handleCurrentLocation
           }}
         >
-
           <Marker
-            coordinate={wearhouse}
-            title={wearhouse.name}
-            image={require('./wearhouseMarker.png')}
-            description={wearhouse.name}
-          />
-
-          {locationList.map(location => (
-            <Marker
-              coordinate={location}
-              title={location.name}
-              image={require('./pointLocation.png')}
-              description={location.name}
-              onPress={handleDistance}
-            />
-          ))}
-          <Circle
-            center={wearhouse}
-            radius={radiusSize}
-            strokeColor='#2F86DE'
-            strokeWidth={2}
-            fillColor='rgba(73, 131, 232, 0.3)'
+            coordinate={marker}
+          // title={marker}
+          // description={marker}
           />
         </MapView>
 
-        <View style={{ position: 'absolute', top: 50, width: '100%' }}>
-          <SearchableDropDown
-            onItemSelect={(item) => {
-              console.log(item)
+        <View style={{ position: 'absolute', top: 60, width: '90%' }}>
+          <GooglePlacesAutocomplete
+            placeholder='Search'
+            onPress={(data, details = null) => {
+              // 'details' is provided when fetchDetails = true
+              // console.log(data);
+              console.log('===============')
+              console.log(details);
               setMarker({
-                latitude: item.latitude,
-                longitude: item.longitude
+                latitude: details.geometry.location.lat,
+                longitude: details.geometry.location.lng
               })
             }}
-            containerStyle={{ padding: 5 }}
-            itemStyle={{
-              padding: 10,
-              marginTop: 2,
-              backgroundColor: '#ddd',
-              borderColor: '#bbb',
-              borderWidth: 1,
-              borderRadius: 5,
+            query={{
+              key: 'AIzaSyDXfQuQr_ciw0HzKycjJs_cVOVtrVGaIkI',
+              language: 'en',
+              components: 'country:bd',
             }}
-            itemTextStyle={{ color: '#222' }}
-            itemsContainerStyle={{ maxHeight: 140 }}
-
-            items={locationList}
-            textInputProps={
-              {
-                placeholder: "Search Location",
-                // underlineColorAndroid: "transparent",
-                style: {
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: '#ccc',
-                  borderRadius: 5,
-                  backgroundColor: '#fff',
-                },
-                onTextChange: text => console.log(text)
-              }
-            }
-            listProps={
-              {
-                nestedScrollEnabled: true,
-              }
-            }
+            fetchDetails={true}
+            // currentLocation={true}
+            currentLocationLabel='Current location'
           />
         </View>
+
+        <TouchableOpacity style={{
+          position: 'absolute',
+          width: 50,
+          height: 50,
+          bottom: 60,
+          right: 30,
+          borderRadius: 25,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'white'
+        }}
+          onPress={handleCurrentLocation}
+        >
+          <Image
+            style={styles.img}
+            source={require('./gps.png')}
+          />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
 export default App;
-
-const mapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-  {
-    featureType: 'administrative.locality',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'poi',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'geometry',
-    stylers: [{ color: '#263c3f' }],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#6b9a76' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#38414e' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#212a37' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#9ca5b3' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [{ color: '#746855' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#1f2835' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#f3d19c' }],
-  },
-  {
-    featureType: 'transit',
-    elementType: 'geometry',
-    stylers: [{ color: '#2f3948' }],
-  },
-  {
-    featureType: 'transit.station',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#17263c' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#515c6d' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.stroke',
-    stylers: [{ color: '#17263c' }],
-  },
-];
 
 const styles = StyleSheet.create({
   container: {
@@ -365,4 +223,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  img: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  }
 });
